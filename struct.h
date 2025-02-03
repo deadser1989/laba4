@@ -30,7 +30,11 @@ void freeStack(Stack* stack);
 int loadDataFromFileToStack(const char* filename, Stack* stack1, Stack* stack2);
 void printStack(node* top);
 void loadFromStack(const char* filename);
-
+void insertionSortStack(Stack* stack);
+void writeSortedStackToFile(const char* filename, Stack* stack);
+int top(Stack* stack);
+int loadSingleLineToStack(const char* filename, Stack* stack);
+void writeSortedToFile(const char* filename, Stack* stack);
 
 node* createNode(int data) {
     node* newNode = (node*)malloc(sizeof(node));
@@ -73,6 +77,14 @@ int pop(Stack* stack) {
     return data;
 }
 
+int top(Stack* stack) {
+    if (isEmpty(stack)) {
+        fprintf(stderr, "Стек пуст, невозможно получить верхний элемент.\n");
+        exit(EXIT_FAILURE);
+    }
+    return stack->top->data;
+}
+
 int peek(Stack* stack) { //посмотреть верхнйи элемент
     if (stack->top == NULL) {
         fprintf(stderr, "Ошибка: стек пуст\n");
@@ -100,7 +112,6 @@ void freeStack(Stack* stack) {
     free(stack);
 }
 
-
 void printStack(node* current) {
     if (current == NULL) {
         return;
@@ -109,7 +120,8 @@ void printStack(node* current) {
     printf(" %d,", current->data); 
 }
 
-//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////............................+_______________________
+
 
 int isNumber(const char* str) {
     if (str == NULL || *str == '\0') {
@@ -126,6 +138,7 @@ int isNumber(const char* str) {
     }
     return 1;
 }
+
 
 int loadDataFromFileToStack(const char* filename, Stack* stack1, Stack* stack2) {
     FILE* file = fopen(filename, "r");
@@ -187,6 +200,116 @@ void loadFromStack(const char* filename) {
     freeStack(stack1);
     freeStack(stack2);
 }
+
+void writeStackToFile(Stack* stack, FILE* file) {
+    int size = 0;
+    node* current = stack->top;
+    while (current != NULL) {//определяем размер стека
+        size++;
+        current = current->next;
+    }
+    int* values = (int*)malloc(size * sizeof(int));//создаем массив для хранения значений
+    current = stack->top;
+
+    for (int i = 0; i < size; i++) {
+        values[i] = current->data;
+        current = current->next;
+    }
+    for (int i = size - 1; i >= 0; i--) {
+        fprintf(file, "%d", values[i]);
+        if (i > 0) {
+            fprintf(file, ",");
+        }
+    }
+    free(values);
+}
+
+
+void fillStackAndWriteToFile(const char* filename) {
+    Stack* stack = createStack();
+    char* buffer = NULL;
+    size_t bufferSize = 0;
+
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Ошибка открытия файла для записи: %s\n", filename);
+        freeStack(stack);
+        return;
+    }
+
+    printf("Введите числа (через пробел или запятую):\n");
+    ssize_t bytesRead = getline(&buffer, &bufferSize, stdin);
+    if (bytesRead == -1) {
+        perror("Ошибка чтения ввода");
+        fclose(file);
+        freeStack(stack);
+        return;
+    }
+
+    char* token = strtok(buffer, " ,");
+    while (token != NULL) {
+        char* endptr;
+        errno = 0;
+        long num = strtol(token, &endptr, 10);
+
+        if (errno == 0 && endptr != token && *endptr == '\0') {
+            push(stack, (int)num);
+        }
+        else {
+            printf("Некорректный ввод: %s\n", token);
+        }
+        token = strtok(NULL, " ,");
+    }
+    //запись в файл в правильном порядке
+    writeStackToFile(stack, file);
+    fclose(file);
+    printf("Числа успешно записаны в файл %s.\n", filename);
+    printf("Содержимое стека: ");
+    //вывод
+    printStack(stack->top);
+    printf("\n");
+    freeStack(stack);
+    stack = createStack();
+    free(buffer);
+}
+
+int loadSingleLineToStack(const char* filename, Stack* stack) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Ошибка открытия файла.\n");
+        return -1;
+    }
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    // Читаем только первую строку из файла
+    if ((read = getline(&line, &len, file)) != -1) {
+        char* token = strtok(line, ",");
+        while (token != NULL) {
+            while (isspace(*token)) token++; // Удаляем пробелы
+            char* endptr;
+            errno = 0;
+            long num = strtol(token, &endptr, 10);
+
+            if (errno == 0 && token != endptr && *endptr == '\0') {
+                int data = (int)num;
+                push(stack, data); // Добавляем данные в стек
+            }
+            else {
+                printf("Не подошло: %s\n", token);
+            }
+            token = strtok(NULL, ",");
+        }
+    }
+
+    free(line);
+    fclose(file);
+    return 0;
+}
+
+
+
+
 
 
 #endif
