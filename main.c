@@ -37,23 +37,17 @@ int main(int argc, char* argv[]) {
     // Заполнение стека и запись в файл
     fillStackAndWriteToFile(filename);
 
-    // Очистка stack1 перед загрузкой новых данных
     freeStack(stack1);
     stack1 = createStack();
-
-    // Загружаем новые данные из файла в stack1
     if (loadSingleLineToStack(filename, stack1) == -1) {
         fprintf(stderr, "Ошибка загрузки данных из файла %s\n", filename);
         return 1;
     }
-
-    // Сортируем стек
     insertionSortStack(stack1);
-
-    // Вывод отсортированного ряда
     printf("Отсортированный ряд: ");
     printStack(stack1->top);
     printf("\n");
+    writeStackToSecondLine(stack1, filename);
 
     // Освобождаем память
     freeStack(stack1);

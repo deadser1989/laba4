@@ -35,6 +35,7 @@ void writeSortedStackToFile(const char* filename, Stack* stack);
 int top(Stack* stack);
 int loadSingleLineToStack(const char* filename, Stack* stack);
 void writeSortedToFile(const char* filename, Stack* stack);
+void fillStackAndWriteToFile(const char* filename);
 
 node* createNode(int data) {
     node* newNode = (node*)malloc(sizeof(node));
@@ -224,19 +225,47 @@ void writeStackToFile(Stack* stack, FILE* file) {
     free(values);
 }
 
+void writeStackToSecondLine(Stack* stack, const char* filename) {
+    FILE* file = fopen(filename, "r+");
+    if (file == NULL) {
+        fprintf(stderr, "Ошибка открытия файла для записи: %s\n", filename);
+        freeStack(stack);
+        return;
+    }
+    char* line = NULL;
+    size_t len = 0;
+    int linecount = 0;
+    char* secondLine = NULL;
+    while (getline(&line, &len, file) != -1){
+        linecount++;
+        if (linecount == 2) {
+            secondLine = strdup(line); //сохраняем вторую строку
+        }
+    }
+    rewind(file);
+    if (linecount > 0) {
+        fputs(line, file);
+    }
+    fprintf(file, ", ");
+    fprintf(file, "\n");
+    writeStackToFile(stack, file);
+    free(secondLine);
+    free(line);
+    fclose(file);
+    fprintf(file, " ");
+}
+
 
 void fillStackAndWriteToFile(const char* filename) {
     Stack* stack = createStack();
     char* buffer = NULL;
     size_t bufferSize = 0;
-
     FILE* file = fopen(filename, "w");
     if (file == NULL) {
         fprintf(stderr, "Ошибка открытия файла для записи: %s\n", filename);
         freeStack(stack);
         return;
     }
-
     printf("Введите числа (через пробел или запятую):\n");
     ssize_t bytesRead = getline(&buffer, &bufferSize, stdin);
     if (bytesRead == -1) {
@@ -269,7 +298,6 @@ void fillStackAndWriteToFile(const char* filename) {
     printStack(stack->top);
     printf("\n");
     freeStack(stack);
-    stack = createStack();
     free(buffer);
 }
 
@@ -306,9 +334,6 @@ int loadSingleLineToStack(const char* filename, Stack* stack) {
     fclose(file);
     return 0;
 }
-
-
-
 
 
 
